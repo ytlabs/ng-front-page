@@ -1,0 +1,142 @@
+html.front-page-init {
+  height: 100%;
+  min-height: 100%;
+  margin:0;
+  padding:0;
+}
+body.front-page-enabled {
+  height: 100%;
+  margin:0;
+  padding:0;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+.flex {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  &.align-center {
+    //all elements inside will be center aligned
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.border-box {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+//element should be child of body!
+body > [front-page], body > [data-front-page] {
+  .border-box();
+  height: 100%;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+
+  //if it has a background image, cover it and center it
+  background-size: cover;
+  background-position: center center;
+
+  //front page may have slides
+  .slide {
+    .border-box();
+    height: 100%;
+    margin: 0 !important;
+    float: left;
+
+    //width should be overriden by directive, if there are more than one slides
+    width: 100%;
+
+    //slides may have background image
+    background-size: cover;
+    background-position: center center;
+  }
+
+  .horizontal-nav {
+    position: absolute;
+    bottom: 8%;
+    width: 240px;
+    text-align: center;
+    left: 50%;
+    margin-left: -120px;
+    > a {
+      display: inline-block;
+      margin: 5px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: fade(white, 50);
+      /*-webkit-transition: all 350ms ease;
+      transition: all 350ms ease;*/
+      &.active {
+        margin: 3px;
+        width: 12px;
+        height: 12px;
+        border: 2px solid fade(white, 80);
+        background-color: fade(white, 50);
+      }
+    }
+  }
+  .prev-button {
+    position: absolute;
+    top: 50%;
+    left: 4%;
+    margin-top: -35px;
+    display: block;
+    width: 50px;
+    height: 50px;
+    border-bottom: 2px solid fade(white, 80);
+    border-left: 2px solid fade(white, 80);
+    -webkit-transform: rotate(45deg);
+    -moz-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+    transform: rotate(45deg);
+    > a {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  }
+  .next-button {
+    position: absolute;
+    top: 50%;
+    right: 4%;
+    margin-top: -35px;
+    display: block;
+    width: 50px;
+    height: 50px;
+    border-bottom: 2px solid fade(white, 80);
+    border-left: 2px solid fade(white, 80);
+    -webkit-transform: rotate(225deg);
+    -moz-transform: rotate(225deg);
+    -ms-transform: rotate(225deg);
+    -o-transform: rotate(225deg);
+    transform: rotate(225deg);
+    > a {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  //if there are more than one slide, they should be inside container
+  .slide-container {
+    clear: both;
+    height: 100%;
+    //width should be overriden by directive, if there are more than one slides
+    //container should not have any child other than front-page-slide
+    width: 100%;
+
+    //slide transition will be done by margin-left
+    //-webkit-transition: margin-left 1s cubic-bezier(0.25,0.1,0.25,1);
+    //transition: margin-left 1s cubic-bezier(0.25,0.1,0.25,1);
+    -webkit-transition: margin-left 1s ease;
+    transition: margin-left 1s ease;
+  }
+
+}

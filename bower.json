@@ -1,0 +1,30 @@
+{
+  "name": "ng-front-page",
+  "version": "0.2.0",
+  "description": "Angularjs directive for full page landing and scolling",
+  "main": [
+    "ng-front-page.js",
+    "ng-front-page.css"
+  ],
+  "keywords": [
+    "Angularjs",
+    "fullpage",
+    "fullpage scrolling",
+    "landing"
+  ],
+  "author": {
+    "name": "Kamil Sulubulut",
+    "url": "http://github.com/kokeksibir/"
+  },
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular-scroll": "~0.7.1"
+  }
+}
