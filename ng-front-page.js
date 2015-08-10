@@ -2,15 +2,18 @@
     'use strict';
 
     angular.module('ngFrontPage', ['duScroll'])
-        .service('frontPageService', ['$document', '$rootScope', '$timeout', '$window', function frontPageService($document, $rootScope, $timeout, $window){
+        .service('frontPageService', ['$document', '$rootScope', '$timeout', '$window', '$injector', function frontPageService($document, $rootScope, $timeout, $window, $injector){
             var bodyElement = angular.element($document[0].body);
             var htmlElement = angular.element(bodyElement.parent());
             var fullPageElements = [];
+            var fullPageSetup = [];
             var timer, htimer;
+            var routeHandlerPromise;
+            var $state = $injector.get('$state');
             var service = {
                 enabled: false,
                 scrollCapture: false,
-                activeElementIndex: null,
+                activeElementIndex: undefined,
                 aligned: false,
                 enable: function() {
                     if(!service.enabled) {
@@ -20,6 +23,7 @@
                         $document.on('scroll', scrollHandler);
                         $document.on('keydown', keydownHandler);
                         angular.element($window).bind('resize', resizeHandler);
+                        routeHandlerPromise = $rootScope.$on('$stateChangeStart', routeHandler);
                         service.enabled = true;
                         fullPageElements = [];
                     }
@@ -31,12 +35,23 @@
                     $document.off('scroll', scrollHandler);
                     angular.element($document).off('keydown', keydownHandler);
                     angular.element($window).bind('resize', resizeHandler);
+                    if(timer) $timeout.cancel(timer);
+                    if(htimer) $timeout.cancel(htimer);
+                    routeHandlerPromise();
+                    service.enabled = false;
+                    fullPageElements = [];
                 },
-                registerFullPage: function(element) {
+                registerFullPage: function(element, setup) {
+                    setup = setup || {};
                     fullPageElements.push(element);
-                    service.safeScroll($document.scrollTop());
+                    fullPageSetup.push(setup)
+                    if((fullPageSetup.length === 1) || ($state && (setup.routeName === $state.current.name))) {
+                        service.aligned = false;
+                        service.safeScroll(element.offsetTop, false, true);
+                    }
+
                 },
-                safeScroll: function(top, dir, speed) {
+                safeScroll: function(top, dir, keep_url) {
                     if(service.aligned) return;
 
                     $document.off('scroll', scrollHandler);
@@ -44,6 +59,7 @@
                     timer = $timeout(function(){
                         $document.on('scroll', scrollHandler);
                     }, 500);
+                    var captured = false;
 
                     for(var i = 0; i < fullPageElements.length; i++) {
                         var element = fullPageElements[i];
@@ -51,14 +67,26 @@
                             ((dir === 'up') && (top >= element.offsetTop) && (top < (element.offsetTop + element.clientHeight))) ||
                             ((dir !== 'up') && (element.offsetTop >= top) && (element.offsetTop < (top + element.clientHeight)))
                         ) {
+                            if(angular.isDefined(service.activeElementIndex)) {
+                                bodyElement.removeClass(fullPageSetup[service.activeElementIndex].exitClass);
+                            }
                             service.activeElementIndex = i;
                             service.scrollCapture = true;
                             service.align = true;
+                            bodyElement.addClass(fullPageSetup[service.activeElementIndex].enterClass);
+                            if(!keep_url && $state && fullPageSetup[service.activeElementIndex].routeName) {
+                                $state.transitionTo(fullPageSetup[service.activeElementIndex].routeName, fullPageSetup[service.activeElementIndex].routeParams, {notify: false})
+                            }
+                            captured = true;
                             break;
                         }
-                        else {
-                            service.scrollCapture = false;
+                    }
+                    if(!captured) {
+                        service.scrollCapture = false;
+                        if(angular.isDefined(service.activeElementIndex)) {
+                            bodyElement.removeClass(fullPageSetup[service.activeElementIndex].exitClass);
                         }
+                        service.activeElementIndex = undefined;
                     }
 
                     var scroll = service.scrollCapture ? fullPageElements[service.activeElementIndex].offsetTop : top;
@@ -106,7 +134,7 @@
             var horizontalControl = function(e, dir) {
                 e.preventDefault();
                 if(service.scrollCapture) {
-                    angular.element(fullPageElements[service.activeElementIndex]).triggerHandler('move-'+dir);
+                    fullPageSetup[service.activeElementIndex].element.triggerHandler('move-'+dir);
                 }
             };
             var keydownHandler = function(e) {
@@ -122,29 +150,65 @@
                     }
                 }
             };
+
+            var routeHandler = function(event, toState){
+                for(var i = 0; i < fullPageSetup.length; i++) {
+                    if(fullPageSetup[i].routeName === toState.name) {
+                        service.safeScroll(fullPageElements[i].offsetTop);
+                        break;
+                    }
+                }
+            };
             return service;
         }])
-        .directive('frontPage', ['$window', '$document', 'frontPageService', '$timeout', function frontPage($window, $document, frontPageService, $timeout){
+        .directive('frontPage', ['$window', '$document', 'frontPageService', '$timeout', '$interval', function frontPage($window, $document, frontPageService, $timeout, $interval){
             return {
                 restrict: 'A',
-                link: function($scope, element) {
-                    $scope.settings = {activeSlide: 0, slideRange: [0, 1], slideCount: 2};
+                scope: true,
+                link: function($scope, element, attrs) {
+                    var loopFunction = function() {
+                        if($scope.intervalPromise) return;
+                        if($scope.settings.slideCount > 1 && $scope.settings.autoLoop) {
+                            $scope.intervalPromise = $interval(function(){
+                                $scope.slideController.nextSlide(true);
+                            }, $scope.settings.autoLoopPeriod || 3000);
+                        }
+                    };
+
+                    $scope.settings = {activeSlide: 0, slideRange: [0, 1], slideCount: 1};
                     $scope.slideController = {
                         ready: function(data) {
+                            $scope.settings.slideCount = data.count;
+                            $scope.settings.slideRange = [];
+                            for(var i = 0; i < data.count; i++) {
+                                $scope.settings.slideRange.push(i);
+                            }
                         },
                         goSlide: function(slideNum) {
+                            $interval.cancel($scope.intervalPromise);
+                            $scope.intervalPromise = undefined;
+                            $scope.timeoutPromise = $timeout(loopFunction, 5000);
                             $scope.settings.activeSlide = slideNum;
                             $scope.$broadcast('change-slide', {'slide': slideNum});
                         },
-                        nextSlide: function() {
+                        nextSlide: function(loop) {
+                            if(!loop) {
+                                $interval.cancel($scope.intervalPromise);
+                                $scope.intervalPromise = undefined;
+                                $scope.timeoutPromise = $timeout(loopFunction, 5000);
+                            }
                             $scope.settings.activeSlide = ($scope.settings.activeSlide + 1) % $scope.settings.slideCount;
                             $scope.$broadcast('change-slide', {'slide': $scope.settings.activeSlide});
                         },
                         previousSlide: function() {
+                            $interval.cancel($scope.intervalPromise);
+                            $scope.intervalPromise = undefined;
+                            $scope.timeoutPromise = $timeout(loopFunction, 5000);
                             $scope.settings.activeSlide = ($scope.settings.activeSlide - 1 + $scope.settings.slideCount) % $scope.settings.slideCount;
                             $scope.$broadcast('change-slide', {'slide': $scope.settings.activeSlide});
                         }
                     };
+
                     element.on('move-left', function(){
                         $scope.slideController.previousSlide();
                         $scope.$apply();
@@ -156,10 +220,20 @@
 
                     $timeout(function(){
                         frontPageService.enable();
-                        frontPageService.registerFullPage(element[0]);
+                        frontPageService.registerFullPage(element[0], {
+                            element: element,
+                            enterClass: attrs.enterClass,
+                            exitClass: attrs.exitClass || attrs.enterClass,
+                            routeName: attrs.routeName
+                        });
+                        $scope.settings.autoLoop = attrs.autoLoop;
+                        $scope.settings.autoLoopPeriod = attrs.autoLoopPeriod || 3000;
+                        loopFunction();
                     });
 
                     $scope.$on('$destroy', function(){
+                        if($scope.intervalPromise) $interval.cancel($scope.intervalPromise);
+                        if($scope.timeoutPromise) $timeout.cancel($scope.timeoutPromise);
                         element.off('move-left');
                         element.off('move-right');
                     })

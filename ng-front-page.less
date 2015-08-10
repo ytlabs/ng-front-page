@@ -41,6 +41,15 @@ body > [front-page], body > [data-front-page] {
   background-size: cover;
   background-position: center center;
 
+  &.free-height {
+    min-height: 100%;
+    height: auto;
+    overflow: hidden;
+    +.free-height-offset {
+      height: 180px;
+    }
+  }
+
   //front page may have slides
   .slide {
     .border-box();

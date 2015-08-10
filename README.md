@@ -58,3 +58,13 @@ $ bower install ng-front-page
     <div class="horizontal-nav"></div>
   </div>
   ```
+
+9. Define class to be added to `body` when a front page element becomes active by `data-enter-class` attribute
+
+10. Define class to be removed from `body` when a front page element becomes inactive by `data-exit-class` attribute
+
+11. For enabling automatic loop through horizontal slides, add attribute `data-auto-loop="true"`
+
+12. Define auto loop period by `data-auto-loop-period` attribute in milliseconds
+
+13. `ng-front-page` collaborates with `ui-router`. It makes transition to route when front page becomes active and if scrolls to front page when route is changed. For binding with router, define route name by `data-route-name`attribute.
