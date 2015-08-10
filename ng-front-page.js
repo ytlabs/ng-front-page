@@ -2,7 +2,7 @@
     'use strict';
 
     angular.module('ngFrontPage', ['duScroll'])
-        .service('frontPageService', ['$document', '$rootScope', '$timeout', function frontPageService($document, $rootScope, $timeout){
+        .service('frontPageService', ['$document', '$rootScope', '$timeout', '$window', function frontPageService($document, $rootScope, $timeout, $window){
             var bodyElement = angular.element($document[0].body);
             var htmlElement = angular.element(bodyElement.parent());
             var fullPageElements = [];
@@ -19,6 +19,7 @@
                         $rootScope.$broadcast('front-page-initialized');
                         $document.on('scroll', scrollHandler);
                         $document.on('keydown', keydownHandler);
+                        angular.element($window).bind('resize', resizeHandler);
                         service.enabled = true;
                         fullPageElements = [];
                     }
@@ -29,6 +30,7 @@
                     $rootScope.$broadcast('front-page-destroyed');
                     $document.off('scroll', scrollHandler);
                     angular.element($document).off('keydown', keydownHandler);
+                    angular.element($window).bind('resize', resizeHandler);
                 },
                 registerFullPage: function(element) {
                     fullPageElements.push(element);
@@ -65,6 +67,9 @@
                         $document.on('scroll', scrollHandler);
                     });
                 }
+            };
+            var resizeHandler = function(){
+              service.safeScroll($document.scrollTop());
             };
             var scrollTrigger = function(top, start) {
                 var direction;

@@ -1,5 +1,6 @@
 # ng-front-page
 
+Angularjs directive for full page landing and scolling
 
 ## Demo
 
