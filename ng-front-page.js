@@ -64,8 +64,8 @@
                     for(var i = 0; i < fullPageElements.length; i++) {
                         var element = fullPageElements[i];
                         if(
-                            ((dir === 'up') && (top >= element.offsetTop) && (top < (element.offsetTop + element.clientHeight))) ||
-                            ((dir !== 'up') && (element.offsetTop >= top) && (element.offsetTop < (top + element.clientHeight)))
+                            ((dir === 'up') && (top >= element.offsetTop) && (top < (element.offsetTop + Math.min(element.clientHeight, $document[0].body.clientHeight)))) ||
+                            ((dir !== 'up') && (element.offsetTop >= top) && (element.offsetTop < (top + Math.min(element.clientHeight, $document[0].body.clientHeight))))
                         ) {
                             if(angular.isDefined(service.activeElementIndex)) {
                                 bodyElement.removeClass(fullPageSetup[service.activeElementIndex].exitClass);
@@ -171,7 +171,7 @@
                         if($scope.settings.slideCount > 1 && $scope.settings.autoLoop) {
                             $scope.intervalPromise = $interval(function(){
                                 $scope.slideController.nextSlide(true);
-                            }, $scope.settings.autoLoopPeriod || 3000);
+                            }, $scope.settings.autoLoopPeriod || 6000);
                         }
                     };
 
@@ -187,7 +187,7 @@
                         goSlide: function(slideNum) {
                             $interval.cancel($scope.intervalPromise);
                             $scope.intervalPromise = undefined;
-                            $scope.timeoutPromise = $timeout(loopFunction, 5000);
+                            $scope.timeoutPromise = $timeout(loopFunction, 10000);
                             $scope.settings.activeSlide = slideNum;
                             $scope.$broadcast('change-slide', {'slide': slideNum});
                         },
@@ -195,7 +195,7 @@
                             if(!loop) {
                                 $interval.cancel($scope.intervalPromise);
                                 $scope.intervalPromise = undefined;
-                                $scope.timeoutPromise = $timeout(loopFunction, 5000);
+                                $scope.timeoutPromise = $timeout(loopFunction, 10000);
                             }
                             $scope.settings.activeSlide = ($scope.settings.activeSlide + 1) % $scope.settings.slideCount;
                             $scope.$broadcast('change-slide', {'slide': $scope.settings.activeSlide});
@@ -203,7 +203,7 @@
                         previousSlide: function() {
                             $interval.cancel($scope.intervalPromise);
                             $scope.intervalPromise = undefined;
-                            $scope.timeoutPromise = $timeout(loopFunction, 5000);
+                            $scope.timeoutPromise = $timeout(loopFunction, 10000);
                             $scope.settings.activeSlide = ($scope.settings.activeSlide - 1 + $scope.settings.slideCount) % $scope.settings.slideCount;
                             $scope.$broadcast('change-slide', {'slide': $scope.settings.activeSlide});
                         }
@@ -227,7 +227,7 @@
                             routeName: attrs.routeName
                         });
                         $scope.settings.autoLoop = attrs.autoLoop;
-                        $scope.settings.autoLoopPeriod = attrs.autoLoopPeriod || 3000;
+                        $scope.settings.autoLoopPeriod = attrs.autoLoopPeriod || 6000;
                         loopFunction();
                     });
 
